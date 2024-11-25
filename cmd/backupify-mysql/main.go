@@ -15,7 +15,6 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-// Config структура для данных из config.json
 type Config struct {
 	MySQLHost       string   `json:"mysql_host"`
 	MySQLUser       string   `json:"mysql_user"`
@@ -28,7 +27,6 @@ type Config struct {
 	FTPDirectory    string   `json:"ftp_directory"`
 }
 
-// Загрузка конфигурации из файла
 func loadConfig(filename string) (Config, error) {
 	var config Config
 	file, err := os.Open(filename)
@@ -41,7 +39,6 @@ func loadConfig(filename string) (Config, error) {
 	return config, err
 }
 
-// Создание резервной копии базы данных
 func backupDatabase(config Config, database string, outputFile string) error {
 	cmd := exec.Command(
 		"mysqldump",
@@ -64,7 +61,6 @@ func backupDatabase(config Config, database string, outputFile string) error {
 	return nil
 }
 
-// Архивирование файлов в .tar.gz
 func archiveFiles(files []string, archivePath string) error {
 	tarFile, err := os.Create(archivePath)
 	if err != nil {
@@ -110,7 +106,6 @@ func archiveFiles(files []string, archivePath string) error {
 	return nil
 }
 
-// Загрузка архива на FTP
 func uploadToFTP(config Config, localFile string) error {
 	conn, err := ftp.Dial(config.FTPHost)
 	if err != nil {
@@ -138,15 +133,12 @@ func uploadToFTP(config Config, localFile string) error {
 	return nil
 }
 
-// Основная функция
 func main() {
-	// Загружаем конфигурацию
 	config, err := loadConfig("config.json")
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	// Создаем директорию для резервных копий
 	err = os.MkdirAll(config.BackupDirectory, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create directory for backups: %v", err)
@@ -164,7 +156,6 @@ func main() {
 		backupFiles = append(backupFiles, backupFile)
 	}
 
-	// Архивируем файлы
 	archivePath := filepath.Join(config.BackupDirectory, fmt.Sprintf("backup_%s.tar.gz", time.Now().Format("20060102_150405")))
 	fmt.Printf("creating archive -> %s\n", archivePath)
 	err = archiveFiles(backupFiles, archivePath)
@@ -172,7 +163,6 @@ func main() {
 		log.Fatalf("failed to archive: %v", err)
 	}
 
-	// Загружаем архив на FTP
 	fmt.Printf("uploading -> %s\n", archivePath)
 	err = uploadToFTP(config, archivePath)
 	if err != nil {
